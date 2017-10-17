@@ -14,11 +14,9 @@ import torch
 def main(params):
     torch.manual_seed(params['seed'])
     torch.set_default_tensor_type('torch.FloatTensor')
-    
+
 
     # pass
-
-
 
 if __name__ == "__main__":
 
@@ -31,7 +29,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--input_json', default='data/vqa_data_prepro.json', help='output json file')
     parser.add_argument('--start_from', default='', help='path to a model checkpoint to initialize model weights from. Empty = don\'t')
-  
+
     # Options
     parser.add_argument('--feature_type', default='VGG', help='VGG or Residual')
     parser.add_argument('--emb_size', default=500, type=int, help='the size after embeeding from onehot')
@@ -73,3 +71,4 @@ if __name__ == "__main__":
     print 'parsed input parameters:'
     print json.dumps(params, indent = 2)
     main(params)
+

@@ -13,13 +13,13 @@ def getopt(opt, key, default_value):
 
 def read_json(path):
 	data = None
-	with open('data.json', 'r') as data_file:    
-    	data = json.load(data_file)
+	with open('data.json', 'r') as data_file:
+        data = json.load(data_file)
     return data
 
 def write_json(path, data):
 	with open(path, 'w') as outfile:
-    	json.dump(data, outfile)
+        json.dump(data, outfile)
 
 def count_key(data):
 	return len(data)
