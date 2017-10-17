@@ -40,7 +40,7 @@ class DataLoader(): # Extend PyTorch's Dataset class
 
         # ------------------------------------------------------------------------------------------------------------------
         # need to double check this
-        self.seq_length = self.ques_train.shape[1]  
+        self.seq_length = self.ques_train.shape[1]
         # ------------------------------------------------------------------------------------------------------------------
 
         # count the vocabulary key!
@@ -117,8 +117,7 @@ class DataLoader(): # Extend PyTorch's Dataset class
                     if self.feature_type == 'VGG':
                         img = self.h5_img_file_train['/images_train'][img_idx[i]-1:img_idx[i], 0:14, 0:14, 0:512]
                         self.img_batch[i] = img
-                    elif:
-                        img = self.feature_type == 'Residual':
+                    elif self.feature_type == 'Residual':
                         img = self.h5_img_file_train['/images_train'][img_idx[i]-1:img_idx[i], 0:14, 0:14, 0:2048]
                         self.img_batch[i] = img
                     else:
@@ -129,8 +128,7 @@ class DataLoader(): # Extend PyTorch's Dataset class
                     if self.feature_type == 'VGG':
                         img = self.h5_img_file_test['/images_test'][img_idx[i]-1:img_idx[i], 0:14, 0:14, 0:512]
                         self.img_batch[i] = img
-                    elif:
-                        img = self.feature_type == 'Residual':
+                    elif self.feature_type == 'Residual':
                         img = self.h5_img_file_test['/images_test'][img_idx[i]-1:img_idx[i], 0:14, 0:14, 0:2048]
                         self.img_batch[i] = img
                     else:
@@ -157,11 +155,4 @@ class DataLoader(): # Extend PyTorch's Dataset class
                 data['answer'].append(self.ans_test[ques_idx[i]])
 
         return data
-
-
-
-
-
-
-
 
