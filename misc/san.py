@@ -4,7 +4,7 @@ from torch.autograd import Variable
 
 class Attention(nn.Module): # Extend PyTorch's Module class
     def __init__(self, input_size, att_size, img_seq_size, output_size, drop_ratio):
-        super(CustomResnet, self).__init__() # Must call super __init__()      
+        super(Attention, self).__init__() # Must call super __init__()      
         self.fc11 = nn.Linear(input_size, att_size, bias=True)
         self.fc12 = nn.Linear(input_size, att_size, bias=False)
         self.tan1 = nn.Tanh()
