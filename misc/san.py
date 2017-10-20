@@ -4,7 +4,7 @@ from torch.autograd import Variable
 
 class Attention(nn.Module): # Extend PyTorch's Module class
     def __init__(self, input_size, att_size, img_seq_size, output_size, drop_ratio):
-        super(Attention, self).__init__() # Must call super __init__()      
+        super(Attention, self).__init__() # Must call super __init__()
         self.fc11 = nn.Linear(input_size, att_size, bias=True)
         self.fc12 = nn.Linear(input_size, att_size, bias=False)
         self.tan1 = nn.Tanh()
@@ -23,14 +23,12 @@ class Attention(nn.Module): # Extend PyTorch's Module class
 
         # d = input_size | m = img_seq_size
     def forward(self, ques_feat, img_feat):  # ques_feat -- [batch, d] | img_feat -- [batch_size, m, d]
-        x = self.conv1(x)
         # Stack 1
         ques_emb_1 = self.fc11(ques_feat)  # [batch_size, att_size]
-        
+
         ques_emb_expand_1 = Variable(torch.rand(batch_size, img_seq_size, att_size))
-        for i in range(0,100):
-            for j in range(0, 196):
-                ques_emb_expand_1[i,j] = ques_emb_1[i]
+        for i in xrange(m):
+            ques_emb_expand_1[:,i] = ques_emb_1
 
         img_emb_dim_1 = nn.fc12(img_feat.view(-1, input_size))
         img_emb_1 = img_emb_dim_1.view(-1, img_seq_size, att_size)
@@ -46,11 +44,10 @@ class Attention(nn.Module): # Extend PyTorch's Module class
 
         # Stack 2
         ques_emb_2 = self.fc21(u1)  # [batch_size, att_size]
-        
+
         ques_emb_expand_2 = Variable(torch.rand(batch_size, img_seq_size, att_size))
-        for i in range(0,100):
-            for j in range(0, 196):
-                ques_emb_expand_2[i,j] = ques_emb_2[i]
+        for i in xrange(m):
+            ques_emb_expand_2[:,i] = ques_emb_2
 
         img_emb_dim_2 = nn.fc22(img_feat.view(-1, input_size))
         img_emb_2 = img_emb_dim_2.view(-1, img_seq_size, att_size)
@@ -68,7 +65,4 @@ class Attention(nn.Module): # Extend PyTorch's Module class
         score = self.fc(u2)
 
         return score
-
-
-
 

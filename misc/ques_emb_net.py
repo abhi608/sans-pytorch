@@ -41,6 +41,6 @@ class QuestionEmbedding(nn.Module):
         h, _ = self.LSTM(emb_vec)
 
         # TODO Understand and Implement Masking
-        # h: [B, hidden_size, W]
-        return torch.transpose(h, 1, 2)
+        # output: [B, hidden_size]
+        return h[:,-1,:]
 
