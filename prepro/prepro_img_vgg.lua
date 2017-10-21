@@ -100,7 +100,7 @@ local ndims=4096
 local batch_size = opt.batch_size
 local sz=#img_list_train
 local feat_train=torch.FloatTensor(sz, 14, 14, 512) --ndims)
-print(string.format('processing %d images...',sz))
+print(string.format('processing %d train images...',sz))
 for i=1,sz,batch_size do
     xlua.progress(i, sz)
     r=math.min(sz,i+batch_size-1)
@@ -118,7 +118,7 @@ local ndims=4096
 local batch_size = opt.batch_size
 local sz=#img_list_test
 local feat_test=torch.FloatTensor(sz,14, 14, 512)
-print(string.format('processing %d images...',sz))
+print(string.format('processing %d test images...',sz))
 for i=1,sz,batch_size do
     xlua.progress(i, sz)
     r=math.min(sz,i+batch_size-1)

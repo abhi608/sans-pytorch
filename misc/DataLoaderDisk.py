@@ -54,7 +54,7 @@ class DataLoader(): # Extend PyTorch's Dataset class
             idx = str(idx)
             if not self.split_ix[idx]:
                 self.split_ix[idx] = []
-                self.iterators[idx] = 1
+                self.iterators[idx] = 0
             self.split_ix[idx].append(i)
 
         for i in range(0, self.split_test.shape[0]):
@@ -62,14 +62,14 @@ class DataLoader(): # Extend PyTorch's Dataset class
             idx = str(idx)
             if not self.split_ix[idx]:
                 self.split_ix[idx] = []
-                self.iterators[idx] = 1
+                self.iterators[idx] = 0
             self.split_ix[idx].append(i)
 
-        for key, value in split_ix.iteritems():
+        for key, value in self.split_ix.iteritems():
             print("Assigned %d images to split %s", len(value), key)
 
     def resetIterator(split):
-        self.iterators[str(split)] = 1
+        self.iterators[str(split)] = 0
 
     def getVocabSize():
         return self.vocab_size
@@ -86,7 +86,7 @@ class DataLoader(): # Extend PyTorch's Dataset class
         batch_zie = getopt(opt, 'batch_size', 128)
 
         split_ix_tmp = self.split_ix[split]
-        assert(split_ix, 'split ' + str(split) + ' not found')
+        assert(split_ix_tmp, 'split ' + str(split) + ' not found')
 
         max_index = len(split_ix_tmp) - 1
         ques_idx = torch.LongTensor(batch_size)
@@ -105,9 +105,9 @@ class DataLoader(): # Extend PyTorch's Dataset class
                 ri_next = 1
             self.iterators[split] = ri_next
             if int(split) == 0:
-                ix = split_ix[torch.randperm(max_index + 1)[0]]
+                ix = split_ix_tmp[torch.randperm(max_index + 1)[0]]
             else:
-                ix = split_ix[ri]
+                ix = split_ix_tmp[ri]
 
             assert(ix != None, 'Bug: split ' + split + ' was accessed out of bounds with ' + str(ri))
             ques_idx[i] = ix
