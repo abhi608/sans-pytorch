@@ -26,7 +26,9 @@ class QuestionEmbedding(nn.Module):
         for i in xrange(B):
             for j in xrange(W):
 
-                # TODO Assuming word IDs to be 1 indexed
+                if not ques_vec[i][j]:
+                    break
+
                 one_hot_vec[i][ques_vec[i][j] - 1][j] = 1
 
             # one_hot_vec: [batch_size, vocab_size, 26]
