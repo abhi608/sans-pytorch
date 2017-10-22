@@ -18,7 +18,7 @@ class QuestionEmbedding(nn.Module):
 
         return
 
-    def forward(self, ques_vec):            # ques_vec: [batch_size, 26]
+    def forward(self, ques_vec, ques_len):            # ques_vec: [batch_size, 26]
         B, W = ques_vec.size()
         one_hot_vec = torch.zeros(B, self.vocab_size, W)
 
@@ -31,9 +31,7 @@ class QuestionEmbedding(nn.Module):
 
                 one_hot_vec[i][ques_vec[i][j] - 1][j] = 1
 
-            # one_hot_vec: [batch_size, vocab_size, 26]
-
-            x += [self.lookuptable(torch.t(emb_vec[i]))]
+            x += [self.lookuptable(torch.t(one_hot_vec[i]))]
 
         # emb_vec: [batch_size or B, 26 or W, emb_size]
         emb_vec = self.dropout.(self.tanh(torch.stack(x)))
