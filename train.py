@@ -13,6 +13,7 @@ from misc.san import Attention
 
 
 def main(params):
+    # Construct Data loader
     opt = {
             'feature_type': params['feature_type'],
             'h5_img_file' : params['input_img_train_h5'],
@@ -26,6 +27,7 @@ def main(params):
                                                batch_size=params['batch_size'],
                                                shuffle=False)
 
+    # Construct NN models
     vocab_size = train_dataset.getVocabSize()
     question_model = QuestionEmbedding(vocab_size, params['emb_size'],
                                        params['hidden_size'], params['rnn_size'],
@@ -38,9 +40,60 @@ def main(params):
                                 params['img_seq_size'], params['output_size'],
                                 params['dropout'])
 
+    # Loss and optimizers
     criterion = nn.CrossEntropyLoss()
 
+    optimizer_parameter_group = [
+            {'params': question_model.parameters()},
+            {'params': image_model.parameters()},
+            {'params': attention_model}
+            ]
+    if params['optim'] =='sgd':
+        optimizer = torch.optim.SGD(optimizer_parameter_group,
+                                    lr=params['learning_rate'],
+                                    momentum=params['momentum'])
+    elif params['optim'] == 'rmsprop':
+        optimizer = torch.optim.RMSprop(optimizer_parameter_group,
+                                        lr=params['learning_rate'],
+                                        alpha=params['optim_alpha'],
+                                        eps=params['optim_epsilon'],
+                                        momentum=params['momentum'])
+    else:
+        print('Unsupported optimizer: \'%s\''%(params['optim']))
+        return None
 
+    # Start training
+
+    loss_store = []
+    for epoch in range(params['epochs']):
+        running_loss = 0.0
+        for i, (image, question, ques_len, ans) in enumerate(train_loader):
+            image = Variable(images)
+            question = Variable(question)
+            if (use_gpu):
+                image = image.cuda()
+                question = question.cuda()
+
+            optimizer.zero_grad()
+            img_emb = image_model(image)
+            ques_emb = image_model(question)
+            output = attention_model(ques_emb, img_emb)
+
+            # TODO May need to convert ans to Variable
+            loss = criterion(output, ans)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.data[0]
+
+            if not (i+1)%50:
+                print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f'%(
+                    epoch+1, params['epochs'], i+1,
+                    train_dataset.__len__()//params['batch_size'], loss.data[0]
+                    ))
+        loss_store += [running_loss]
+
+    print(loss_store)
 
 
 if __name__ == "__main__":
@@ -66,6 +119,7 @@ if __name__ == "__main__":
     parser.add_argument('--rnn_layers', default=1, type=int, help='number of the rnn layer')
     parser.add_argument('--img_seq_size' default=196, type=int, help='number of feature regions in image')
     parser.add_argument('--dropout', default=0.5, type=float, help='dropout ratio in network')
+    parser.add_argument('--epochs', default=10, type=int, help='Number of epochs to run')
 
 
     # Optimization
