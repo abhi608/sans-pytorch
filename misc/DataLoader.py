@@ -1,3 +1,6 @@
+import h5py
+import misc.utils as utils
+
 class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
     def __init__(self, opt, train, transform=None):
         print('DataLoader loading h5 question file: ' + opt['h5_ques_file'])
@@ -25,11 +28,19 @@ class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
         self.feature_type = opt['feature_type']
         self.train = train
         self.transform = transform
-        
+
+        print('DataLoader loading json file: ', opt['json_file'])
+        json_file = utils.read_json(opt['json_file'])
+        self.ix_to_word = json_file['ix_to_word']
+        self.ix_to_ans = json_file['ix_to_ans']
+
+        self.vocab_size = utils.count_key(self.ix_to_word)
+        self.seq_length = self.ques.shape[1]
+
     def __len__(self):
 
         return self.split.shape[0]
-        
+
     def __getitem__(self, idx):
 
         img_idx = self.img_pos[idx]
@@ -50,7 +61,12 @@ class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
                     print("Error(test): feature type error")
 
         questions = self.ques[idx] # vector of size 21
-        ques_id = self.ques_id[idx] # scalar integer
         ques_len = self.ques_len[idx] # scalar integer
         answer = self.ans[idx] # scalar integer
-        return (img, questions, ques_id, ques_len, answer)
+        return (self.transform(img), self.transform(questions), ques_len, answer)
+
+    def getVocabSize():
+        return self.vocab_size
+
+    def getSeqLength():
+        return self.seq_length
