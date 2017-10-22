@@ -1,0 +1,8 @@
+# Files in dataset
+data/
+
+# Files after preprocessing
+down/
+
+# image preprocessing model
+image_model/
