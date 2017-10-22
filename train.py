@@ -1,22 +1,47 @@
-from random import shuffle, seed
-import sys
-import os.path
 import argparse
 import numpy as np
-import pdb
-import h5py
 import json
-import re
-import math
 import torch
+import torch.nn as nn
+import torchvision
+import torchvision.transforms as transforms
+
+from misc.DataLoaderModified import CDATA
+from misc.img_emb_net import ImageEmbedding
+from misc.ques_emb_net import QuestionEmbedding
+from misc.san import Attention
 
 
 def main(params):
-    torch.manual_seed(params['seed'])
-    torch.set_default_tensor_type('torch.FloatTensor')
+    opt = {
+            'feature_type': params['feature_type'],
+            'h5_img_file' : params['input_img_train_h5'],
+            'h5_ques_file': params['input_ques_h5'],
+            'json_file'   : params['input_json']
+            }
+    composed_transform = transforms.Compose([transforms.ToTensor()])
+    train_dataset = CDATA(opt, train=True, transform=composed_transform)
+
+    train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
+                                               batch_size=params['batch_size'],
+                                               shuffle=False)
+
+    vocab_size = train_dataset.getVocabSize()
+    question_model = QuestionEmbedding(vocab_size, params['emb_size'],
+                                       params['hidden_size'], params['rnn_size'],
+                                       params['rnn_layers'], params['dropout'],
+                                       train_dataset.getSeqLength())
+
+    image_model = ImageEmbedding(params['hidden_size'], params['feature_type'])
+
+    attention_model = Attention(params['hidden_size'], params['att_size'],
+                                params['img_seq_size'], params['output_size'],
+                                params['dropout'])
+
+    criterion = nn.CrossEntropyLoss()
 
 
-    # pass
+
 
 if __name__ == "__main__":
 
@@ -39,6 +64,8 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', default=200, type=int, help='what is theutils batch size in number of images per batch? (there will be x seq_per_img sentences)')
     parser.add_argument('--output_size', default=1000, type=int, help='number of output answers')
     parser.add_argument('--rnn_layers', default=1, type=int, help='number of the rnn layer')
+    parser.add_argument('--img_seq_size' default=196, type=int, help='number of feature regions in image')
+    parser.add_argument('--dropout', default=0.5, type=float, help='dropout ratio in network')
 
 
     # Optimization

@@ -3,8 +3,16 @@ from torch.autograd import Variable
 
 
 class ImageEmbedding(nn.Module):
-    def __init__(self, hidden_size, img_features=512):
+    def __init__(self, hidden_size, feature_type='VGG'):
         super(ImageEmbedding, self).__init__() # Must call super __init__()
+
+        if feature_type == 'VGG':
+            img_features = 512
+        elif feature_type == 'Residual':
+            img_features = 2048
+        else:
+            print('Unsupported feature type: \'{}\''.format(feature_type))
+            return None
 
         self.hidden_size = hidden_size
         self.img_features = img_features
