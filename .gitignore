@@ -6,3 +6,6 @@ down/
 
 # image preprocessing model
 image_model/
+
+# python trash
+*.pyc
