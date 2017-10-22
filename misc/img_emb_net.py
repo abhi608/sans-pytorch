@@ -15,7 +15,7 @@ class ImageEmbedding(nn.Module):
             return None
 
         self.hidden_size = hidden_size
-        self.linear = nn.Linear(img_features, hidden_size)
+        self.linear = nn.Linear(self.img_features, self.hidden_size)
         self.tanh = nn.Tanh()
         self.dropout = nn.Dropout(0.5)
 

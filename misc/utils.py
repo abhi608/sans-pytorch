@@ -13,7 +13,7 @@ def getopt(opt, key, default_value):
 
 def read_json(path):
     data = None
-    with open('data.json', 'r') as data_file:
+    with open(path, 'r') as data_file:
         data = json.load(data_file)
     return data
 

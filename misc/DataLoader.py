@@ -1,4 +1,6 @@
 import h5py
+import torch
+import numpy as np
 import misc.utils as utils
 
 class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
@@ -24,12 +26,11 @@ class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
             self.ans = h5_file['/ans_test']
             self.split = h5_file['/split_test']
 
-        h5_file.close()
         self.feature_type = opt['feature_type']
         self.train = train
         self.transform = transform
 
-        print('DataLoader loading json file: ', opt['json_file'])
+        print('DataLoader loading json file: %s'% opt['json_file'])
         json_file = utils.read_json(opt['json_file'])
         self.ix_to_word = json_file['ix_to_word']
         self.ix_to_ans = json_file['ix_to_ans']
@@ -45,7 +46,7 @@ class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
 
         img_idx = self.img_pos[idx]
         if self.h5_img_file:
-            if train:
+            if self.train:
                 if self.feature_type == 'VGG':
                     img = self.h5_img_file['/images_train'][img_idx, 0:14, 0:14, 0:512]  # [14, 14, 512]
                 elif self.feature_type == 'Residual':
@@ -60,13 +61,17 @@ class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
                 else:
                     print("Error(test): feature type error")
 
-        questions = self.ques[idx] # vector of size 21
-        ques_len = self.ques_len[idx] # scalar integer
-        answer = self.ans[idx] # scalar integer
-        return (self.transform(img), self.transform(questions), ques_len, answer)
+        question = np.array(self.ques[idx], dtype=np.int32)                 # vector of size 26
+        ques_len = self.ques_len[idx].astype(int) # scalar integer
+        answer = self.ans[idx].astype(int) # scalar integer
+        if self.transform is not None:
+            img = self.transform(img)
+            question = self.transform(question)
 
-    def getVocabSize():
+        return (img, question, ques_len, answer)
+
+    def getVocabSize(self):
         return self.vocab_size
 
-    def getSeqLength():
+    def getSeqLength(self):
         return self.seq_length

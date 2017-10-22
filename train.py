@@ -3,10 +3,11 @@ import numpy as np
 import json
 import torch
 import torch.nn as nn
+from torch.autograd import Variable
 import torchvision
 import torchvision.transforms as transforms
 
-from misc.DataLoaderModified import CDATA
+from misc.DataLoader import CDATA
 from misc.img_emb_net import ImageEmbedding
 from misc.ques_emb_net import QuestionEmbedding
 from misc.san import Attention
@@ -20,8 +21,7 @@ def main(params):
             'h5_ques_file': params['input_ques_h5'],
             'json_file'   : params['input_json']
             }
-    composed_transform = transforms.Compose([transforms.ToTensor()])
-    train_dataset = CDATA(opt, train=True, transform=composed_transform)
+    train_dataset = CDATA(opt, train=True)
 
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=params['batch_size'],
@@ -32,13 +32,18 @@ def main(params):
     question_model = QuestionEmbedding(vocab_size, params['emb_size'],
                                        params['hidden_size'], params['rnn_size'],
                                        params['rnn_layers'], params['dropout'],
-                                       train_dataset.getSeqLength())
+                                       train_dataset.getSeqLength(), params['use_gpu'])
 
     image_model = ImageEmbedding(params['hidden_size'], params['feature_type'])
 
     attention_model = Attention(params['hidden_size'], params['att_size'],
                                 params['img_seq_size'], params['output_size'],
-                                params['dropout'])
+                                params['dropout'], params['use_gpu'])
+
+    if params['use_gpu'] and torch.cuda.is_available():
+        question_model.cuda()
+	image_model.cuda()
+	attention_model.cuda()
 
     # Loss and optimizers
     criterion = nn.CrossEntropyLoss()
@@ -46,7 +51,7 @@ def main(params):
     optimizer_parameter_group = [
             {'params': question_model.parameters()},
             {'params': image_model.parameters()},
-            {'params': attention_model}
+            {'params': attention_model.parameters()}
             ]
     if params['optim'] =='sgd':
         optimizer = torch.optim.SGD(optimizer_parameter_group,
@@ -68,18 +73,19 @@ def main(params):
     for epoch in range(params['epochs']):
         running_loss = 0.0
         for i, (image, question, ques_len, ans) in enumerate(train_loader):
-            image = Variable(images)
+            image = Variable(image)
             question = Variable(question)
-            if (use_gpu):
+            ans = Variable(ans, requires_grad=False)
+            if (params['use_gpu'] and torch.cuda.is_available()):
                 image = image.cuda()
                 question = question.cuda()
+                ans = ans.cuda()
 
             optimizer.zero_grad()
             img_emb = image_model(image)
-            ques_emb = image_model(question)
+            ques_emb = question_model(question)
             output = attention_model(ques_emb, img_emb)
 
-            # TODO May need to convert ans to Variable
             loss = criterion(output, ans)
             loss.backward()
             optimizer.step()
@@ -117,7 +123,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', default=200, type=int, help='what is theutils batch size in number of images per batch? (there will be x seq_per_img sentences)')
     parser.add_argument('--output_size', default=1000, type=int, help='number of output answers')
     parser.add_argument('--rnn_layers', default=1, type=int, help='number of the rnn layer')
-    parser.add_argument('--img_seq_size' default=196, type=int, help='number of feature regions in image')
+    parser.add_argument('--img_seq_size', default=196, type=int, help='number of feature regions in image')
     parser.add_argument('--dropout', default=0.5, type=float, help='dropout ratio in network')
     parser.add_argument('--epochs', default=10, type=int, help='Number of epochs to run')
 
@@ -133,6 +139,7 @@ if __name__ == "__main__":
     parser.add_argument('--optim_epsilon', default=1e-8, type=float, help='epsilon that goes into denominator in rmsprop')
     parser.add_argument('--max_iters', default=-1, type=int, help='max number of iterations to run for (-1 = run forever)')
     parser.add_argument('--iterPerEpoch', default=1250, type=int, help=' no. of iterations per epoch')
+    parser.add_argument('--use_gpu', default=True, type=bool, help='to use gpu or not to use, that is the question')
 
     # Evaluation/Checkpointing
     parser.add_argument('--save_checkpoint_every', default=6000, type=int, help='how often to save a model checkpoint?')
@@ -149,7 +156,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     params = vars(args) # convert to ordinary dict
-    print 'parsed input parameters:'
+    print('parsed input parameters:')
     print json.dumps(params, indent = 2)
     main(params)
 
