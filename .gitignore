@@ -7,5 +7,8 @@ down/
 # image preprocessing model
 image_model/
 
+# Weights from trained models
+train_model/
+
 # python trash
 *.pyc
