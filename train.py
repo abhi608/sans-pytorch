@@ -91,7 +91,7 @@ def main(params):
 
             optimizer.zero_grad()
             img_emb = image_model(image)
-            ques_emb = question_model(question)
+            ques_emb = question_model(question, ques_len)
             output = attention_model(ques_emb, img_emb)
 
             loss = criterion(output, ans)

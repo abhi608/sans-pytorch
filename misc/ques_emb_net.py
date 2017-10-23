@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -20,23 +21,16 @@ class QuestionEmbedding(nn.Module):
 
         return
 
-    def forward(self, ques_vec):            # forward(self, ques_vec, ques_len) | ques_vec: [batch_size, 26]
+    def forward(self, ques_vec, ques_len):            # forward(self, ques_vec, ques_len) | ques_vec: [batch_size, 26]
         B, W = ques_vec.size()
-        one_hot_vec = torch.zeros(B, self.vocab_size, W)
+        one_hot_vec = torch.zeros(B, W, self.vocab_size).scatter_(2,
+                        ques_vec.data.type('torch.LongTensor').view(B, W, 1), 1)
 
-        for i in xrange(B):
-            for j in xrange(W):
-
-                if not ques_vec[i][j].data[0]:
-                    break
-
-                one_hot_vec[i, ques_vec[i][j].data[0] - 1, j] = 1
-
-        one_hot_vec = Variable(one_hot_vec)
+        one_hot_vec = Variable(one_hot_vec, requires_grad=False)
         if self.use_gpu and torch.cuda.is_available():
             one_hot_vec = one_hot_vec.cuda()
 
-        x = self.lookuptable(torch.transpose(one_hot_vec, 1, 2))
+        x = self.lookuptable(one_hot_vec)
 
         # emb_vec: [batch_size or B, 26 or W, emb_size]
         emb_vec = self.dropout(self.tanh(x))
@@ -44,7 +38,15 @@ class QuestionEmbedding(nn.Module):
         # h: [batch_size or B, 26 or W, hidden_size]
         h, _ = self.LSTM(emb_vec)
 
-        # TODO Understand and Implement Masking
+        x = torch.LongTensor(ques_len - 1)
+        mask = torch.zeros(B, W).scatter_(1, x.view(-1, 1), 1)
+        mask = Variable(mask.view(B, W, 1), requires_grad=False)
+        if self.use_gpu and torch.cuda.is_available():
+            mask = mask.cuda()
+
+        h = h.transpose(1,2)
+        # print(h.size(), mask.size())
+
         # output: [B, hidden_size]
-        return h[:,-1,:]
+        return torch.bmm(h, mask).view(B, -1)
 

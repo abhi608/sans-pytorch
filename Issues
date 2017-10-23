@@ -1,5 +1,3 @@
 # TODO
 
-* Masking in ques_emb_net: take output from cell # seq_len instead of last cell
-
 * Make img_emb_net, ques_emb_net, san constants free
