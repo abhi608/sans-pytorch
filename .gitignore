@@ -9,6 +9,7 @@ image_model/
 
 # Weights from trained models
 train_model/
+save_model_200_40/
 
 # python trash
 *.pyc

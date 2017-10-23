@@ -108,9 +108,9 @@ def main(params):
                     ))
 	    if not (i+1)%params['save_checkpoint_every']:
 		print("Saving models")
-	        torch.save(question_model.state_dict(), params['checkpoint_path']+'question_model.pkl')
-		torch.save(image_model.state_dict(), params['checkpoint_path']+'image_model.pkl')
-		torch.save(attention_model.state_dict(), params['checkpoint_path']+'attention_model.pkl')
+	        torch.save(question_model.state_dict(), params['checkpoint_path']+'/question_model.pkl')
+		torch.save(image_model.state_dict(), params['checkpoint_path']+'/image_model.pkl')
+		torch.save(attention_model.state_dict(), params['checkpoint_path']+'/attention_model.pkl')
         loss_store += [running_loss]
 	#torch.save(question_model.state_dict(), 'question_model'+str(epoch)+'.pkl')
 
