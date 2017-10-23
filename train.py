@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import torchvision
-import torchvision.transforms as transforms
 
 from misc.DataLoader import CDATA
 from misc.img_emb_net import ImageEmbedding
@@ -87,18 +86,24 @@ def main(params):
             output = attention_model(ques_emb, img_emb)
 
             loss = criterion(output, ans)
-	    print('i, %d LOSS: %d '%(i, loss.data[0]))
+	    print('i, %d LOSS: %.4f '%(i, loss.data[0]))
             loss.backward()
             optimizer.step()
 
             running_loss += loss.data[0]
 
-            if not (i+1)%50:
+            if not (i+1)%params['losses_log_every']:
                 print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f'%(
                     epoch+1, params['epochs'], i+1,
                     train_dataset.__len__()//params['batch_size'], loss.data[0]
                     ))
+	    if not (i+1)%params['save_checkpoint_every']:
+		print("Saving models")
+	        torch.save(question_model.state_dict(), params['checkpoint_path']+'question_model.pkl')
+		torch.save(image_model.state_dict(), params['checkpoint_path']+'image_model.pkl')
+		torch.save(attention_model.state_dict(), params['checkpoint_path']+'attention_model.pkl')
         loss_store += [running_loss]
+	torch.save(question_model.state_dict(), 'question_model'+str(epoch)+'.pkl')
 
     print(loss_store)
 
@@ -123,7 +128,7 @@ if __name__ == "__main__":
     parser.add_argument('--att_size', default=512, type=int, help='size of sttention vector which refer to k in paper')
     parser.add_argument('--batch_size', default=200, type=int, help='what is theutils batch size in number of images per batch? (there will be x seq_per_img sentences)')
     parser.add_argument('--output_size', default=1000, type=int, help='number of output answers')
-    parser.add_argument('--rnn_layers', default=1, type=int, help='number of the rnn layer')
+    parser.add_argument('--rnn_layers', default=2, type=int, help='number of the rnn layer')
     parser.add_argument('--img_seq_size', default=196, type=int, help='number of feature regions in image')
     parser.add_argument('--dropout', default=0.5, type=float, help='dropout ratio in network')
     parser.add_argument('--epochs', default=10, type=int, help='Number of epochs to run')
@@ -143,11 +148,11 @@ if __name__ == "__main__":
     parser.add_argument('--use_gpu', default=True, type=bool, help='to use gpu or not to use, that is the question')
 
     # Evaluation/Checkpointing
-    parser.add_argument('--save_checkpoint_every', default=6000, type=int, help='how often to save a model checkpoint?')
-    parser.add_argument('--checkpoint_path', default='save/train_vgg', help='folder to save checkpoints into (empty = this folder)')
+    parser.add_argument('--save_checkpoint_every', default=500, type=int, help='how often to save a model checkpoint?')
+    parser.add_argument('--checkpoint_path', default='train_model/', help='folder to save checkpoints into (empty = this folder)')
 
     # Visualization
-    parser.add_argument('--losses_log_every', default=600, type=int, help='How often do we save losses, for inclusion in the progress dump? (0 = disable)')
+    parser.add_argument('--losses_log_every', default=50, type=int, help='How often do we save losses, for inclusion in the progress dump? (0 = disable)')
 
     # misc
     parser.add_argument('--id', default='1', help='an id identifying this run/job. used in cross-val and appended when writing progress files')
