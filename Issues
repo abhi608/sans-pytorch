@@ -2,6 +2,4 @@
 
 * Masking in ques_emb_net: take output from cell # seq_len instead of last cell
 
-* Adjust learning rate of optimizer -- https://discuss.pytorch.org/t/adaptive-learning-rate/320/4
-
 * Make img_emb_net, ques_emb_net, san constants free

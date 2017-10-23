@@ -11,6 +11,12 @@ from misc.img_emb_net import ImageEmbedding
 from misc.ques_emb_net import QuestionEmbedding
 from misc.san import Attention
 
+def adjust_learning_rate(optimizer, epoch, lr, learning_rate_decay_every):
+    # Sets the learning rate to the initial LR decayed by 10 every learning_rate_decay_every epochs
+    lr_tmp = lr * (0.1 ** (epoch // learning_rate_decay_every))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr_tmp
+    return lr_tmp
 
 def main(params):
     # Construct Data loader
@@ -69,8 +75,11 @@ def main(params):
     # Start training
 
     loss_store = []
+    lr_cur = params['learning_rate']
     for epoch in range(params['epochs']):
-        running_loss = 0.0
+	if epoch + 1 > params['learning_rate_decay_start']:
+		lr_cur = adjust_learning_rate(optimizer, epoch, params['learning_rate'], params['learning_rate_decay_every'])
+	running_loss = 0.0
         for i, (image, question, ques_len, ans) in enumerate(train_loader):
             image = Variable(image)
             question = Variable(question)
@@ -86,7 +95,7 @@ def main(params):
             output = attention_model(ques_emb, img_emb)
 
             loss = criterion(output, ans)
-	    print('i, %d LOSS: %.4f '%(i, loss.data[0]))
+	    print('i: %d | LOSS: %.4f | lr: %f'%(i, loss.data[0], lr_cur))
             loss.backward()
             optimizer.step()
 
@@ -103,7 +112,7 @@ def main(params):
 		torch.save(image_model.state_dict(), params['checkpoint_path']+'image_model.pkl')
 		torch.save(attention_model.state_dict(), params['checkpoint_path']+'attention_model.pkl')
         loss_store += [running_loss]
-	torch.save(question_model.state_dict(), 'question_model'+str(epoch)+'.pkl')
+	#torch.save(question_model.state_dict(), 'question_model'+str(epoch)+'.pkl')
 
     print(loss_store)
 
@@ -138,8 +147,8 @@ if __name__ == "__main__":
     parser.add_argument('--optim', default='rmsprop', help='what update to use? rmsprop|sgd|sgdmom|adagrad|adam')
     parser.add_argument('--learning_rate', default=4e-4, type=float, help='learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
-    parser.add_argument('--learning_rate_decay_start', default=100, type=int, help='at what iteration to start decaying learning rate? (-1 = dont)')
-    parser.add_argument('--learning_rate_decay_every', default=1500, type=int, help='every how many epoch thereafter to drop LR by 0.1?')
+    parser.add_argument('--learning_rate_decay_start', default=10, type=int, help='at what epoch to start decaying learning rate?')
+    parser.add_argument('--learning_rate_decay_every', default=10, type=int, help='every how many epoch thereafter to drop LR by 0.1?')
     parser.add_argument('--optim_alpha', default=0.99, type=float, help='alpha for adagrad/rmsprop/momentum/adam')
     parser.add_argument('--optim_beta', default=0.995, type=float, help='beta used for adam')
     parser.add_argument('--optim_epsilon', default=1e-8, type=float, help='epsilon that goes into denominator in rmsprop')
