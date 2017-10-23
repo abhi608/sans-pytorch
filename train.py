@@ -87,6 +87,7 @@ def main(params):
             output = attention_model(ques_emb, img_emb)
 
             loss = criterion(output, ans)
+	    print('i, %d LOSS: %d '%(i, loss.data[0]))
             loss.backward()
             optimizer.step()
 

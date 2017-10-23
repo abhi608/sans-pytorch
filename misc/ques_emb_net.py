@@ -23,11 +23,7 @@ class QuestionEmbedding(nn.Module):
     def forward(self, ques_vec):            # forward(self, ques_vec, ques_len) | ques_vec: [batch_size, 26]
         B, W = ques_vec.size()
         one_hot_vec = torch.zeros(B, self.vocab_size, W)
-        one_hot_vec = Variable(one_hot_vec)
-        if self.use_gpu and torch.cuda.is_available():
-            one_hot_vec = one_hot_vec.cuda()
 
-        x = []
         for i in xrange(B):
             for j in xrange(W):
 
@@ -36,11 +32,14 @@ class QuestionEmbedding(nn.Module):
 
                 one_hot_vec[i, ques_vec[i][j].data[0] - 1, j] = 1
 
-            x += [self.lookuptable(torch.t(one_hot_vec[i]))]
+        one_hot_vec = Variable(one_hot_vec)
+        if self.use_gpu and torch.cuda.is_available():
+            one_hot_vec = one_hot_vec.cuda()
+
+        x = self.lookuptable(torch.transpose(one_hot_vec, 1, 2))
 
         # emb_vec: [batch_size or B, 26 or W, emb_size]
-        emb_vec = self.dropout(self.tanh(torch.stack(x)))
-
+        emb_vec = self.dropout(self.tanh(x))
 
         # h: [batch_size or B, 26 or W, hidden_size]
         h, _ = self.LSTM(emb_vec)

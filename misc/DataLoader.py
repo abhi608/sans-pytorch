@@ -44,7 +44,7 @@ class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
 
     def __getitem__(self, idx):
 
-        img_idx = self.img_pos[idx]
+        img_idx = self.img_pos[idx] - 1
         if self.h5_img_file:
             if self.train:
                 if self.feature_type == 'VGG':
@@ -63,7 +63,7 @@ class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
 
         question = np.array(self.ques[idx], dtype=np.int32)                 # vector of size 26
         ques_len = self.ques_len[idx].astype(int) # scalar integer
-        answer = self.ans[idx].astype(int) # scalar integer
+        answer = self.ans[idx].astype(int) - 1    # scalar integer
         if self.transform is not None:
             img = self.transform(img)
             question = self.transform(question)
