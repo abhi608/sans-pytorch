@@ -23,10 +23,13 @@ class QuestionEmbedding(nn.Module):
 
     def forward(self, ques_vec, ques_len):            # forward(self, ques_vec, ques_len) | ques_vec: [batch_size, 26]
         B, W = ques_vec.size()
-        one_hot_vec = torch.zeros(B, W, self.vocab_size).scatter_(2,
+
+        # Add 1 to vocab_size, since word idx from 0 to vocab_size inclusive
+        one_hot_vec = torch.zeros(B, W, self.vocab_size+1).scatter_(2,
                         ques_vec.data.type('torch.LongTensor').view(B, W, 1), 1)
 
-        one_hot_vec = Variable(one_hot_vec, requires_grad=False)
+        # To remove additional column in one_hot, use slicing
+        one_hot_vec = Variable(one_hot_vec[:,:,1:], requires_grad=False)
         if self.use_gpu and torch.cuda.is_available():
             one_hot_vec = one_hot_vec.cuda()
 
