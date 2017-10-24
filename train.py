@@ -73,7 +73,7 @@ def main(params):
         return None
 
     # Start training
-
+    all_loss_store = []
     loss_store = []
     lr_cur = params['learning_rate']
     for epoch in range(params['epochs']):
@@ -96,6 +96,7 @@ def main(params):
 
             loss = criterion(output, ans)
 	    print('i: %d | LOSS: %.4f | lr: %f'%(i, loss.data[0], lr_cur))
+	    all_loss_store += [loss.data[0]]
             loss.backward()
             optimizer.step()
 
@@ -113,7 +114,8 @@ def main(params):
 		torch.save(attention_model.state_dict(), params['checkpoint_path']+'/attention_model.pkl')
         loss_store += [running_loss]
 	#torch.save(question_model.state_dict(), 'question_model'+str(epoch)+'.pkl')
-
+    print("Saving all losses to file")
+    np.savetxt('all_loss_store.txt', np.array(all_loss_store), fmt='%f')
     print(loss_store)
 
 

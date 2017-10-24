@@ -62,7 +62,7 @@ def main(params):
             question = question.cuda()
 
         img_emb = image_model(image)
-        ques_emb = question_model(question)
+        ques_emb = question_model(question, ques_len)
         output = attention_model(ques_emb, img_emb)
 
         _, prediction = torch.max(output.data, 1)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     parser.add_argument('--att_size', default=512, type=int, help='size of sttention vector which refer to k in paper')
     parser.add_argument('--batch_size', default=200, type=int, help='what is theutils batch size in number of images per batch? (there will be x seq_per_img sentences)')
     parser.add_argument('--output_size', default=1000, type=int, help='number of output answers')
-    parser.add_argument('--rnn_layers', default=1, type=int, help='number of the rnn layer')
+    parser.add_argument('--rnn_layers', default=2, type=int, help='number of the rnn layer')
     parser.add_argument('--img_seq_size', default=196, type=int, help='number of feature regions in image')
     parser.add_argument('--dropout', default=0.5, type=float, help='dropout ratio in network')
 
