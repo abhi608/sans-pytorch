@@ -69,9 +69,9 @@ def main(params):
         total += ans.size(0)
         correct += (prediction.cpu() == ans).sum()
         if not (i+1)%100:
-            print('Accuracy on %d images: %d%%'%(total, 100.0*correct/total))
+            print('Accuracy on %d images: %f%%'%(total, 100.0*correct/total))
 
-    print('Accuracy on test set with %d images: %d %%'%(total, 100.0 * correct/total))
+    print('Accuracy on test set with %d images: %f %%'%(total, 100.0 * correct/total))
 
 if __name__ == "__main__":
 

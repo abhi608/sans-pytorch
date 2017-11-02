@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import json
+import os
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -11,12 +12,14 @@ from misc.img_emb_net import ImageEmbedding
 from misc.ques_emb_net import QuestionEmbedding
 from misc.san import Attention
 
+
 def adjust_learning_rate(optimizer, epoch, lr, learning_rate_decay_every):
     # Sets the learning rate to the initial LR decayed by 10 every learning_rate_decay_every epochs
-    lr_tmp = lr * (0.1 ** (epoch // learning_rate_decay_every))
+    lr_tmp = lr * (0.5 ** (epoch // learning_rate_decay_every))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr_tmp
     return lr_tmp
+
 
 def main(params):
     # Construct Data loader
@@ -47,8 +50,18 @@ def main(params):
 
     if params['use_gpu'] and torch.cuda.is_available():
         question_model.cuda()
-	image_model.cuda()
-	attention_model.cuda()
+        image_model.cuda()
+        attention_model.cuda()
+
+    if params['resume_from_epoch'] > 1:
+        load_model_dir = os.path.join(params['checkpoint_path'], str(params['resume_from_epoch']-1))
+        print('Loading model files from folder: %s' % load_model_dir)
+        question_model.load_state_dict(torch.load(
+            os.path.join(load_model_dir, 'question_model.pkl')))
+        image_model.load_state_dict(torch.load(
+            os.path.join(load_model_dir, 'image_model.pkl')))
+        attention_model.load_state_dict(torch.load(
+            os.path.join(load_model_dir, 'attention_model.pkl')))
 
     # Loss and optimizers
     criterion = nn.CrossEntropyLoss()
@@ -58,7 +71,7 @@ def main(params):
             {'params': image_model.parameters()},
             {'params': attention_model.parameters()}
             ]
-    if params['optim'] =='sgd':
+    if params['optim'] == 'sgd':
         optimizer = torch.optim.SGD(optimizer_parameter_group,
                                     lr=params['learning_rate'],
                                     momentum=params['momentum'])
@@ -69,17 +82,21 @@ def main(params):
                                         eps=params['optim_epsilon'],
                                         momentum=params['momentum'])
     else:
-        print('Unsupported optimizer: \'%s\''%(params['optim']))
+        print('Unsupported optimizer: \'%s\'' % (params['optim']))
         return None
 
     # Start training
     all_loss_store = []
     loss_store = []
     lr_cur = params['learning_rate']
-    for epoch in range(params['epochs']):
-	if epoch + 1 > params['learning_rate_decay_start']:
-		lr_cur = adjust_learning_rate(optimizer, epoch, params['learning_rate'], params['learning_rate_decay_every'])
-	running_loss = 0.0
+    for epoch in range(params['resume_from_epoch'], params['epochs']+1):
+
+        if epoch > params['learning_rate_decay_start']:
+            lr_cur = adjust_learning_rate(optimizer, epoch - 1 - params['learning_rate_decay_start'] + params['learning_rate_decay_every'],
+                                          params['learning_rate'], params['learning_rate_decay_every'])
+        print('Epoch: %d | lr: %f' % (epoch, lr_cur))
+
+        running_loss = 0.0
         for i, (image, question, ques_len, ans) in enumerate(train_loader):
             image = Variable(image)
             question = Variable(question)
@@ -95,27 +112,30 @@ def main(params):
             output = attention_model(ques_emb, img_emb)
 
             loss = criterion(output, ans)
-	    print('i: %d | LOSS: %.4f | lr: %f'%(i, loss.data[0], lr_cur))
-	    all_loss_store += [loss.data[0]]
+            #  print('i: %d | LOSS: %.4f | lr: %f'%(i, loss.data[0], lr_cur))
+            all_loss_store += [loss.data[0]]
             loss.backward()
             optimizer.step()
 
             running_loss += loss.data[0]
 
-            if not (i+1)%params['losses_log_every']:
-                print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f'%(
-                    epoch+1, params['epochs'], i+1,
+            if not (i+1) % params['losses_log_every']:
+                print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f' % (
+                    epoch, params['epochs'], i+1,
                     train_dataset.__len__()//params['batch_size'], loss.data[0]
                     ))
-	    if not (i+1)%params['save_checkpoint_every']:
-		print("Saving models")
-	        torch.save(question_model.state_dict(), params['checkpoint_path']+'/question_model.pkl')
-		torch.save(image_model.state_dict(), params['checkpoint_path']+'/image_model.pkl')
-		torch.save(attention_model.state_dict(), params['checkpoint_path']+'/attention_model.pkl')
+
+        print("Saving models")
+        model_dir = os.path.join(params['checkpoint_path'], str(epoch))
+        os.mkdir(model_dir)
+        torch.save(question_model.state_dict(), os.path.join(model_dir, 'question_model.pkl'))
+        torch.save(image_model.state_dict(), os.path.join(model_dir, 'image_model.pkl'))
+        torch.save(attention_model.state_dict(), os.path.join(model_dir, 'attention_model.pkl'))
         loss_store += [running_loss]
-	#torch.save(question_model.state_dict(), 'question_model'+str(epoch)+'.pkl')
+
+        # torch.save(question_model.state_dict(), 'question_model'+str(epoch)+'.pkl')
     print("Saving all losses to file")
-    np.savetxt('all_loss_store.txt', np.array(all_loss_store), fmt='%f')
+    np.savetxt(os.path.join(params['checkpoint_path'], 'all_loss_store.txt'), np.array(all_loss_store), fmt='%f')
     print(loss_store)
 
 
@@ -130,6 +150,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--input_json', default='data/vqa_data_prepro.json', help='output json file')
     parser.add_argument('--start_from', default='', help='path to a model checkpoint to initialize model weights from. Empty = don\'t')
+    parser.add_argument('--resume_from_epoch', default=1, type=int, help='load model from previous epoch')
 
     # Options
     parser.add_argument('--feature_type', default='VGG', help='VGG or Residual')
@@ -143,7 +164,6 @@ if __name__ == "__main__":
     parser.add_argument('--img_seq_size', default=196, type=int, help='number of feature regions in image')
     parser.add_argument('--dropout', default=0.5, type=float, help='dropout ratio in network')
     parser.add_argument('--epochs', default=10, type=int, help='Number of epochs to run')
-
 
     # Optimization
     parser.add_argument('--optim', default='rmsprop', help='what update to use? rmsprop|sgd|sgdmom|adagrad|adam')
@@ -172,8 +192,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', default=1234, type=int, help='random number generator seed to use')
 
     args = parser.parse_args()
-    params = vars(args) # convert to ordinary dict
+    params = vars(args)                     # convert to ordinary dict
     print('parsed input parameters:')
-    print json.dumps(params, indent = 2)
+    print json.dumps(params, indent=2)
     main(params)
-
