@@ -38,7 +38,7 @@ def main(params):
 
     attention_model = Attention(params['hidden_size'], params['att_size'],
                                 params['img_seq_size'], params['output_size'],
-                                params['dropout'], params['use_gpu'])
+                                params['dropout'])
 
     if params['use_gpu'] and torch.cuda.is_available():
         question_model.cuda()
