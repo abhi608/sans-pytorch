@@ -4,11 +4,13 @@ import numpy as np
 import misc.utils as utils
 
 class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
-    def __init__(self, opt, train, transform=None):
-        print('DataLoader loading h5 question file: ' + opt['h5_ques_file'])
+    def __init__(self, opt, train, transform=None, quiet=False):
+        if not quiet:
+            print('DataLoader loading h5 question file: ' + opt['h5_ques_file'])
         h5_file = h5py.File(opt['h5_ques_file'], 'r')
         if train:
-            print('DataLoader loading h5 image train file: ' + opt['h5_img_file'])
+            if not quiet:
+                print('DataLoader loading h5 image train file: ' + opt['h5_img_file'])
             self.h5_img_file = h5py.File(opt['h5_img_file'], 'r')
             self.ques = h5_file['/ques_train']
             self.ques_len = h5_file['/ques_len_train']
@@ -17,7 +19,8 @@ class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
             self.ans = h5_file['/answers']
             self.split = h5_file['/split_train']
         else:
-            print('DataLoader loading h5 image test file: ' + opt['h5_img_file'])
+            if not quiet:
+                print('DataLoader loading h5 image test file: ' + opt['h5_img_file'])
             self.h5_img_file = h5py.File(opt['h5_img_file'], 'r')
             self.ques = h5_file['/ques_test']
             self.ques_len = h5_file['/ques_len_test']
@@ -30,7 +33,8 @@ class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
         self.train = train
         self.transform = transform
 
-        print('DataLoader loading json file: %s'% opt['json_file'])
+        if not quiet:
+            print('DataLoader loading json file: %s'% opt['json_file'])
         json_file = utils.read_json(opt['json_file'])
         self.ix_to_word = json_file['ix_to_word']
         self.ix_to_ans = json_file['ix_to_ans']

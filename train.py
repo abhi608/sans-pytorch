@@ -29,7 +29,7 @@ def main(params):
             'h5_ques_file': params['input_ques_h5'],
             'json_file'   : params['input_json']
             }
-    train_dataset = CDATA(opt, train=True)
+    train_dataset = CDATA(opt, train=True, quiet=( not params['print_params']))
 
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=params['batch_size'],
@@ -81,6 +81,13 @@ def main(params):
                                         alpha=params['optim_alpha'],
                                         eps=params['optim_epsilon'],
                                         momentum=params['momentum'])
+    elif params['optim'] == 'adam':
+	optimizer = torch.optim.Adam(optimizer_parameter_group,
+				     eps=params['optim_epsilon'],
+				     lr=params['learning_rate'])
+    elif params['optim'] == 'rprop':
+	optimizer = torch.optim.Rprop(optimizer_parameter_group,
+                                     lr=params['learning_rate'])
     else:
         print('Unsupported optimizer: \'%s\'' % (params['optim']))
         return None
@@ -176,23 +183,25 @@ if __name__ == "__main__":
     parser.add_argument('--optim_epsilon', default=1e-8, type=float, help='epsilon that goes into denominator in rmsprop')
     parser.add_argument('--max_iters', default=-1, type=int, help='max number of iterations to run for (-1 = run forever)')
     parser.add_argument('--iterPerEpoch', default=1250, type=int, help=' no. of iterations per epoch')
-    parser.add_argument('--use_gpu', default=True, type=bool, help='to use gpu or not to use, that is the question')
 
     # Evaluation/Checkpointing
     parser.add_argument('--save_checkpoint_every', default=500, type=int, help='how often to save a model checkpoint?')
     parser.add_argument('--checkpoint_path', default='train_model/', help='folder to save checkpoints into (empty = this folder)')
 
     # Visualization
-    parser.add_argument('--losses_log_every', default=50, type=int, help='How often do we save losses, for inclusion in the progress dump? (0 = disable)')
+    parser.add_argument('--losses_log_every', default=10, type=int, help='How often do we save losses, for inclusion in the progress dump? (0 = disable)')
 
     # misc
+    parser.add_argument('--use_gpu', default=1, type=int, help='to use gpu or not to use, that is the question')
     parser.add_argument('--id', default='1', help='an id identifying this run/job. used in cross-val and appended when writing progress files')
     parser.add_argument('--backend', default='cudnn', help='nn|cudnn')
     parser.add_argument('--gpuid', default=2, type=int, help='which gpu to use. -1 = use CPU')
     parser.add_argument('--seed', default=1234, type=int, help='random number generator seed to use')
+    parser.add_argument('--print_params', default=1, type=int, help='pass 0 to turn off printing input parameters')
 
     args = parser.parse_args()
     params = vars(args)                     # convert to ordinary dict
-    print('parsed input parameters:')
-    print json.dumps(params, indent=2)
+    if params['print_params']:
+        print('parsed input parameters:')
+        print json.dumps(params, indent = 2)
     main(params)

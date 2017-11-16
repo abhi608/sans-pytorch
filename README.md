@@ -15,7 +15,7 @@ $ python vqa_preprocessing.py --download 1 --split 1
 `--download Ture` means you choose to download the VQA data from the [VQA website](http://www.visualqa.org/) and `--split 1` means you use COCO train set to train and validation set to evaluation. `--split 2 ` means you use COCO train+val set to train and test set to evaluate. After this step, it will generate two files under the `data` folder. `vqa_raw_train.json` and `vqa_raw_test.json`
 
 ##### Download Image Model
-Here we use VGG_ILSVRC_19_layers [model](https://gist.github.com/ksimonyan/3785162f95cd2d5fee77) and Deep Residual network implement by Facebook [model](https://github.com/facebook/fb.resnet.torch). 
+Here we use VGG_ILSVRC_19_layers [model](https://gist.github.com/ksimonyan/3785162f95cd2d5fee77) and Deep Residual network implement by Facebook [model](https://github.com/facebook/fb.resnet.torch).
 
 ##### Generate Image/Question Features
 
@@ -37,13 +37,13 @@ you can change the `-gpuid`, `-backend` and `-batch_size` based on your gpu.
 We have everything ready to train the VQA. Back to the `main` folder
 
 ```
-python train.py --use_gpu True --batch_size <batch size> --epochs <no. of epochs>
+python train.py --use_gpu <0 or 1> --batch_size <batch size> --epochs <no. of epochs>
 ```
 you can also change many other options. For a list of all options, see train.py
 
 ##### Evaluate the model
-In main folder run 
+In main folder run
 ```
-python eval.py 
+python eval.py --use_gpu <0 or 1>
 ```
 you can also change many other options. For a list of all options, see eval.py
