@@ -50,7 +50,7 @@ class Attention(nn.Module): # Extend PyTorch's Module class
 
         h2 = self.tan(ques_emb_2.view(B, 1, self.att_size) + img_emb_2)
 
-        h2_emb = self.fc13(self.dp(h2))
+        h2_emb = self.fc23(self.dp(h2))
         p2 = self.sf(h2_emb.view(-1, self.img_seq_size)).view(B, 1, self.img_seq_size)
 
         # Weighted sum
